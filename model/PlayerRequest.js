@@ -4,12 +4,6 @@ const { Schema, model } = mongoose
 const playerRequestSchema = new Schema(
     [
         {
-            name: {
-                type: String,
-                required: true
-            }
-        },
-        {
             email: {
                 type: String,
                 required: true,

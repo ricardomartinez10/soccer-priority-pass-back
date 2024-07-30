@@ -3,22 +3,11 @@ import Player from './model/Player.js';
 import PlayerRequest from './model/PlayerRequest.js';
 import express from 'express';
 import bodyParser from 'body-parser';
+import { dataBasePlayers } from './data/dataBasePlaters.js';
 import cors from 'cors';
 
 const app = express();
 app.use(cors());
-
-const form = [
-    {
-        name: 'Ricardo'
-    },
-    {
-        name: 'David'
-    }
-];
-
-const formPlayers = form.map(player => player.name);
-
 // database connection
 mongoose.connect("mongodb://Cluster06691:RFxkZUZQR1BS@ac-hdvzltr-shard-00-00.22d7pjq.mongodb.net:27017,ac-hdvzltr-shard-00-01.22d7pjq.mongodb.net:27017,ac-hdvzltr-shard-00-02.22d7pjq.mongodb.net:27017/?ssl=true&replicaSet=atlas-14g5nr-shard-0&authSource=admin&retryWrites=true&w=majority&appName=Cluster06691")
     .then(() => {
@@ -75,7 +64,7 @@ app.post('/player-request', async (req, res) => {
     } else {
         if (!playerExistsInDataBase) {
             await Player.create({
-                name:req.body.name,
+                name:req.body.email,
                 email: req.body.email,
                 position: '',
                 assists: 0
@@ -92,32 +81,16 @@ app.get('/formState', async (req, res) => {
     res.json(formState);
 });
 
+function populateDataBase() {
+    dataBasePlayers.forEach(async (player) => {
+        await Player.create(player)
+    });
+}
 
-// First approach to insert
-/* const player = new Player({
-    name: 'David',
-    assists: 8,
-    position: 'Defender'
-});
+async function resetDataBaseplayers() {
+    await Player.deleteMany({});
+}
 
-await player.save(); */
-
-// second approach to insert
-// Create a new blog post and insert into database
-/* const player = await Player.create({
-    name: 'ivan',
-    position: 'defender',
-    assists: 7
-  });
- */
-// find and update
-//const player = await Player.findByIdAndUpdafindByIdte('66a3cdcdce07e8d571164d52', {name: 'Yan Arce'}).exec();
-// find and return properties 
-//const player = await Player.findById('66a3c5ceb333f8260e77e234', 'name').exec();
-// delete by name
-//const player = await Player.deleteOne({name: 'Yan Arce'});
-// exist
-//const player = await Player.exists({name: 'Ricardo'});
-// where
-/* const player = await Player.find({}, 'name assists position');
-console.log(player); */
+async function resetRequestlistPlayers() {
+    await PlayerRequest.deleteMany({});
+}
