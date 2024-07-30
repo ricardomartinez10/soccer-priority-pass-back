@@ -3,7 +3,7 @@ import Player from './model/Player.js';
 import PlayerRequest from './model/PlayerRequest.js';
 import express from 'express';
 import bodyParser from 'body-parser';
-import { dataBasePlayers } from './data/dataBasePlaters.js';
+//import { dataBasePlayers } from './data/dataBasePlayers.js';
 import cors from 'cors';
 
 const app = express();
