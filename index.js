@@ -42,7 +42,6 @@ app.get('/player-request', async (req, res) => {
     const priorityPlayers = priorityPlayersQuery.filter(player => player.position !== 'arquero');
     const priorityKeepers = priorityPlayersQuery.filter(player => player.position === 'arquero');
 
-    console.log(priorityPlayers);
     const confirmedPlayers = {
         priorityPlayers,
         priorityKeepers
@@ -76,9 +75,44 @@ app.post('/player-request', async (req, res) => {
     }
 });
 
-app.get('/formState', async (req, res) => {
-    const formState = req.query.state;
-    res.json(formState);
+app.put('/update-player-assists', async (req, res) => {
+    await Player.updateMany(
+        {
+            'confirmed': true
+        },
+        { 
+            $inc: { assists: 1 }
+        }).exec()
+        .catch((error) => {
+            console.log('error', error);
+            res.status(500).json(error);
+        })
+
+        res.json('Assists updated')
+});
+
+app.put('/update-player-confirmed', async (req, res) => {
+    const playersToUpdate = req.body;
+
+/*     await Player.updateMany(
+        {'email': {$in: playersToUpdate}}, 
+        {
+            $set: { confirmed: true },
+            $inc: { assists: 1 }
+        }).exec()
+        .catch((error) => {
+            console.log('error', error);
+            res.status(500).json(error);
+        }) */
+    await Player.updateMany(
+        {'email': {$in: playersToUpdate}},
+        { confirmed: true }).exec()
+        .catch((error) => {
+            console.log('error', error);
+            res.status(500).json(error);
+        })
+
+        res.json('Updated')
 });
 
 function populateDataBase() {

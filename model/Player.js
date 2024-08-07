@@ -7,6 +7,10 @@ const playerSchema = new Schema([{
         type: String,
         required: true
     },
+    confirmed: {
+        type: Boolean,
+        required: false
+    },
     email: {
         type: String,
         required: true,
