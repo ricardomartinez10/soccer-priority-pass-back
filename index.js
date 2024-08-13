@@ -6,6 +6,9 @@ import bodyParser from 'body-parser';
 //import { dataBasePlayers } from './data/dataBasePlayers.js';
 import cors from 'cors';
 
+const MAX_KEEPERS = 2;
+const MAX_PLAYERS = 18;
+
 const app = express();
 app.use(cors());
 // database connection
@@ -75,20 +78,49 @@ app.post('/player-request', async (req, res) => {
     }
 });
 
-app.put('/update-player-assists', async (req, res) => {
-    await Player.updateMany(
-        {
-            'confirmed': true
-        },
-        { 
-            $inc: { assists: 1 }
-        }).exec()
-        .catch((error) => {
-            console.log('error', error);
-            res.status(500).json(error);
-        })
+app.put('/reset-confirm-status', async(req, res) => {
+    await Player.updateMany({}, {confirmed: false }).exec();
 
-        res.json('Assists updated')
+    res.json('Confirm status updated');
+});
+
+app.put('/update-player-assists', async(req, res) => {
+    const subscribedPlayers = await PlayerRequest
+        .find({}, 'email')
+        .exec();
+    const subscribedPlayersEmail = subscribedPlayers.map(player => player.email);
+    const priorityPlayersQuery = await Player
+        .find({'email': {$in: subscribedPlayersEmail}})
+        .sort({'assists': 'desc'}).exec();
+
+    const priorityPlayers = priorityPlayersQuery.filter(player => player.position !== 'arquero').slice(0, MAX_PLAYERS);
+    const priorityKeepers = priorityPlayersQuery.filter(player => player.position === 'arquero').slice(0, MAX_KEEPERS);
+
+    const confirmedPlayersEmail = priorityPlayers.concat(priorityKeepers).map(player => player.email);
+
+    await Player.updateMany(
+        { email: {$in: confirmedPlayersEmail}},
+        {
+            $inc: { assists: 1}
+        }
+    ).exec();
+
+    res.json('player assists updated');
+});
+
+app.put('/remove-players-assist', async (req, res) => {
+    const playersToUpdate = req.body.players.split(',');
+
+    await Player.updateMany( 
+        {
+            name: { $in: playersToUpdate }
+        },
+        {
+            $inc: { assists: -1 }
+        }
+    ).exec();
+
+    res.json('Player assists removed');
 });
 
 app.put('/update-player-confirmed', async (req, res) => {
@@ -113,6 +145,12 @@ app.put('/update-player-confirmed', async (req, res) => {
         })
 
         res.json('Updated')
+});
+
+app.delete('/reset-player-request', async (req, res) => {
+    await PlayerRequest.deleteMany({}).exec();
+
+    res.json('Request players reset')
 });
 
 function populateDataBase() {
