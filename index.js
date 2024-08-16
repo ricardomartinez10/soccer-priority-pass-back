@@ -5,14 +5,22 @@ import express from 'express';
 import bodyParser from 'body-parser';
 //import { dataBasePlayers } from './data/dataBasePlayers.js';
 import cors from 'cors';
+import 'dotenv/config';
+import { createHmac } from 'node:crypto';
 
 const MAX_KEEPERS = 2;
 const MAX_PLAYERS = 18;
 
+/* console.log(process.env.BASE_URL);
+const hash = createHmac('sha256', process.env.SECRET_CODE)
+               .update('I love cupcakes')
+               .digest('hex');
+console.log('text', hash); */
+
 const app = express();
 app.use(cors());
 // database connection
-mongoose.connect("mongodb://Cluster06691:RFxkZUZQR1BS@ac-hdvzltr-shard-00-00.22d7pjq.mongodb.net:27017,ac-hdvzltr-shard-00-01.22d7pjq.mongodb.net:27017,ac-hdvzltr-shard-00-02.22d7pjq.mongodb.net:27017/?ssl=true&replicaSet=atlas-14g5nr-shard-0&authSource=admin&retryWrites=true&w=majority&appName=Cluster06691")
+mongoose.connect(process.env.BASE_URL)
     .then(() => {
         console.log('connected');
     })
