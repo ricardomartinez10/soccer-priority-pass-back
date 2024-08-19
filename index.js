@@ -1,22 +1,18 @@
 import mongoose from 'mongoose'
 import Player from './model/Player.js';
 import PlayerRequest from './model/PlayerRequest.js';
+import Game from './model/Game.js';
+import User from './model/User.js';
 import express from 'express';
 import bodyParser from 'body-parser';
-//import { dataBasePlayers } from './data/dataBasePlayers.js';
+import { dataBasePlayers } from './data/dataBasePlayers.js';
+import { newPlayers } from './data/newPlayers.js';
 import cors from 'cors';
 import 'dotenv/config';
 import { createHmac } from 'node:crypto';
 
 const MAX_KEEPERS = 2;
 const MAX_PLAYERS = 18;
-
-/* console.log(process.env.BASE_URL);
-const hash = createHmac('sha256', process.env.SECRET_CODE)
-               .update('I love cupcakes')
-               .digest('hex');
-console.log('text', hash); */
-
 const app = express();
 app.use(cors());
 // database connection
@@ -155,22 +151,101 @@ app.put('/update-player-confirmed', async (req, res) => {
         res.json('Updated')
 });
 
+app.post('/validate-log-in', async (req, res) => {
+    const {username, password} = req.body;
+    const bpassword = createHmac('sha256', process.env.SECRET_CODE)
+        .update(password)
+        .digest('hex');
+
+    const user = await User.exists({username, password: bpassword})
+        .exec()
+        .catch(error => console.log)
+    if (user) {
+        res.status(200).json('Login successfully');
+    } else {
+        res.status(401).json('User unauthorized');
+    }
+});
+
+app.get('/game-details', async (req, res) => {
+    const game = await Game.findOne({}).exec();
+
+    res.json(game);
+});
+
+app.post('/update-game-date', async (req, res) => {
+    const { date } = req.body;
+    const game = await Game.updateOne(
+        {date}
+    ).exec();
+
+    const isPlayerRequestEmpty  = await PlayerRequest.countDocuments({}).exec();
+
+    if (isPlayerRequestEmpty) {
+        const subscribedPlayers = await PlayerRequest
+            .find({}, 'email')
+            .exec();
+        const subscribedPlayersEmail = subscribedPlayers.map(player => player.email);
+        const priorityPlayersQuery = await Player
+            .find({'email': {$in: subscribedPlayersEmail}})
+            .sort({'assists': 'desc'}).exec();
+
+        const priorityPlayers = priorityPlayersQuery.filter(player => player.position !== 'arquero').slice(0, MAX_PLAYERS);
+        const priorityKeepers = priorityPlayersQuery.filter(player => player.position === 'arquero').slice(0, MAX_KEEPERS);
+
+        const confirmedPlayersEmail = priorityPlayers.concat(priorityKeepers).map(player => player.email);
+
+        await Player.updateMany(
+            { email: {$in: confirmedPlayersEmail}},
+            {
+            $inc: { assists: 1}
+            }
+        ).exec();
+
+        await PlayerRequest.deleteMany({}).exec();
+    }
+    
+
+    res.json(game);
+});
+
 app.delete('/reset-player-request', async (req, res) => {
     await PlayerRequest.deleteMany({}).exec();
 
     res.json('Request players reset')
 });
 
+async function createGame() {
+    await Game.create({
+        date: '15/08/2024 19:00:00',
+        dateFormat: 'DD/MM/YYYY HH:mm:ss'
+    });
+
+    console.log('Game created')
+}
+
+app.get('/get-lost-players', async (req, res) => {
+    const emails = dataBasePlayers.map(player => player.email.toLowerCase());
+
+    let mongoPlayers = await Player.find({}).exec();
+    mongoPlayers = mongoPlayers.map(player => player.email);
+
+    const response = {
+        emails,
+        mongoPlayers
+    };
+
+    const missingElements = emails.filter(email => {
+        return email !== mongoPlayers.find(mongoPlayer => mongoPlayer === email);
+    })
+
+    res.json(missingElements);
+});
+
 function populateDataBase() {
-    dataBasePlayers.forEach(async (player) => {
+    newPlayers.forEach(async (player) => {
         await Player.create(player)
     });
-}
 
-async function resetDataBaseplayers() {
-    await Player.deleteMany({});
-}
-
-async function resetRequestlistPlayers() {
-    await PlayerRequest.deleteMany({});
+    console.log('Players updated')
 }
