@@ -1,12 +1,12 @@
 import mongoose from 'mongoose'
 import Player from './model/Player.js';
 import PlayerRequest from './model/PlayerRequest.js';
-//import Game from './model/Game.js';
-//import User from './model/User.js';
+import Game from './model/Game.js';
+import User from './model/User.js';
 import express from 'express';
 import bodyParser from 'body-parser';
-import { dataBasePlayers } from './data/dataBasePlayers.js';
-import { newPlayers } from './data/newPlayers.js';
+//import { dataBasePlayers } from './data/dataBasePlayers.js';
+//import { newPlayers } from './data/newPlayers.js';
 import cors from 'cors';
 import 'dotenv/config';
 import { createHmac } from 'node:crypto';
