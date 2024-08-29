@@ -242,6 +242,57 @@ app.get('/get-lost-players', async (req, res) => {
     res.json(missingElements);
 });
 
+app.get('/get-players-list', async (req, res) => {
+    const subscribedPlayers = await PlayerRequest
+        .find({}, 'email')
+        .exec();
+
+    const subscribedPlayersEmail = subscribedPlayers.map(player => player.email);
+    const priorityPlayersQuery = await Player
+        .find({'email': {$in: subscribedPlayersEmail}})
+        .sort({'assists': 'desc'}).exec();
+
+    const priorityPlayers = priorityPlayersQuery.filter(player => player.position !== 'arquero').slice(0, MAX_PLAYERS);
+    const priorityKeepers = priorityPlayersQuery.filter(player => player.position === 'arquero').slice(0, MAX_KEEPERS);
+
+    function getPlayerRankList(playerList){
+        return playerList.reduce((prev, current, index) => {
+            if (index === 0) {
+                return `${index + 1}. ${current.name}`;
+              }
+              return `${prev}<br>${index + 1}. ${current.name}`;
+        }, 1)
+    }
+
+    const list = `
+Fútbol próximo Jueves ⚽
+<br>
+Lugar: Canchas 5-0 atrás de Palmetto
+<br>
+Hora: 6:45 pm. - Importante llegar temprano
+<br>
+Recibe William 
+<br>
+Valor: 15.000
+<br>
+<br>
+Enviar dinero al Nequi de William Gio Valencia y anotarse en la lista con el emoji 💵
+<br>
+Código QR en la foto de perfil o enviar a 318 8990695
+<br>
+<br>
+Arqueros:
+<br>
+${getPlayerRankList(priorityKeepers)}
+<br>
+<br>
+Jugadores:
+<br>
+${getPlayerRankList(priorityPlayers)}
+`
+    res.send(list);
+});
+
 function populateDataBase() {
     newPlayers.forEach(async (player) => {
         await Player.create(player)
