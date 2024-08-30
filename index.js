@@ -261,7 +261,7 @@ app.get('/get-players-list', async (req, res) => {
                 return `${index + 1}. ${current.name}`;
               }
               return `${prev}<br>${index + 1}. ${current.name}`;
-        }, 1)
+        }, '');
     }
 
     const list = `
