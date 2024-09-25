@@ -163,8 +163,6 @@ app.post('/validate-log-in', async (req, res) => {
     if (user) {
         res.status(200).json('Login successfully');
     } else {
-        console.log('mac');
-        console.log(bpassword);
         res.status(401).json('User unauthorized');
     }
 });
