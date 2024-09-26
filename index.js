@@ -157,6 +157,9 @@ app.post('/validate-log-in', async (req, res) => {
         .update(password)
         .digest('hex');
 
+    console.log('mac');
+    console.log(bpassword);
+
     const user = await User.exists({username, password: bpassword})
         .exec()
         .catch(error => console.log)
